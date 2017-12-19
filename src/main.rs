@@ -4,7 +4,6 @@ use syscall::data::Packet;
 use syscall::scheme::Scheme;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::mem::size_of;
 use scheme::ZeroScheme;
 
 mod scheme;
