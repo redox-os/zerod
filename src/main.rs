@@ -17,7 +17,9 @@ fn main() {
 
         loop {
             let mut packet = Packet::default();
-            socket.read(&mut packet).expect("zerod: failed to read events from zero scheme");
+            if socket.read(&mut packet).expect("zerod: failed to read events from zero scheme") == 0 {
+                break;
+            }
 
             scheme.handle(&mut packet);
 
