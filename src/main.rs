@@ -1,6 +1,7 @@
 extern crate syscall;
 
 use syscall::data::Packet;
+use syscall::flag::CloneFlags;
 use syscall::scheme::Scheme;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -9,7 +10,7 @@ use scheme::ZeroScheme;
 mod scheme;
 
 fn main() {
-    if unsafe { syscall::clone(0).unwrap() } == 0 {
+    if unsafe { syscall::clone(CloneFlags::empty()).unwrap() } == 0 {
         let mut socket = File::create(":zero").expect("zerod: failed to create zero scheme");
         let scheme = ZeroScheme;
 
