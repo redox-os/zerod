@@ -6,7 +6,7 @@ use std::cmp;
 pub struct ZeroScheme;
 
 impl Scheme for ZeroScheme {
-    fn open(&self, _path: &[u8], _flags: usize, _uid: u32, _gid: u32) -> Result<usize> {
+    fn open(&self, _path: &str, _flags: usize, _uid: u32, _gid: u32) -> Result<usize> {
         Ok(0)
     }
 
