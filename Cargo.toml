@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Alex Lyon <arcterus@mail.com>"]
 
 [dependencies]
-redox_syscall = "0.2.7"
+redox_syscall = "0.2.9"
