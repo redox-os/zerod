@@ -5,5 +5,5 @@ authors = ["Alex Lyon <arcterus@mail.com>"]
 edition = "2021"
 
 [dependencies]
-redox_syscall = "0.2.12"
+redox_syscall = "0.3"
 redox-daemon = "0.1"
