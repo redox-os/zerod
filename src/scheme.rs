@@ -1,4 +1,4 @@
-use syscall::error::*;
+use syscall::{error::*, MODE_CHR};
 use syscall::scheme::Scheme;
 
 use std::cmp;
@@ -55,6 +55,15 @@ impl Scheme for ZeroScheme {
 
     /// Close the file `number`
     fn close(&self, _file: usize) -> Result<usize> {
+        Ok(0)
+    }
+    fn fstat(&self, _: usize, stat: &mut syscall::Stat) -> Result<usize> {
+        stat.st_mode = 0o666 | MODE_CHR;
+        stat.st_size = 0;
+        stat.st_blocks = 0;
+        stat.st_blksize = 4096;
+        stat.st_nlink = 1;
+
         Ok(0)
     }
 }
