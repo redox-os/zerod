@@ -1,31 +1,41 @@
-use std::fs::File;
-use std::io::{Read, Write};
-
-use syscall::data::Packet;
-use syscall::scheme::Scheme;
+use redox_scheme::{Socket, SignalBehavior};
 
 use scheme::ZeroScheme;
 
 mod scheme;
 
-fn main() {
-    redox_daemon::Daemon::new(move |daemon| {
-        let mut socket = File::create(":zero").expect("zerod: failed to create zero scheme");
-        let scheme = ZeroScheme;
+enum Ty {
+    Null,
+    Zero,
+}
 
-        syscall::setrens(0, 0).expect("zerod: failed to enter null namespace");
+fn main() {
+    let ty = match &*std::env::args().next().unwrap() {
+        "nulld" => Ty::Null,
+        "zerod" => Ty::Zero,
+        _ => panic!("needs to be called as either nulld or zerod"),
+    };
+
+    redox_daemon::Daemon::new(move |daemon| {
+        let name = match ty {
+            Ty::Null => "null",
+            Ty::Zero => "zero",
+        };
+        let socket = Socket::create(name).expect("zerod: failed to create zero scheme");
+        let zero_scheme = ZeroScheme(ty);
+
+        libredox::call::setrens(0, 0).expect("zerod: failed to enter null namespace");
 
         daemon.ready().expect("zerod: failed to notify parent");
 
         loop {
-            let mut packet = Packet::default();
-            if socket.read(&mut packet).expect("zerod: failed to read events from zero scheme") == 0 {
+            let Some(request) = socket.next_request(SignalBehavior::Restart).expect("zerod: failed to read events from zero scheme") else {
                 std::process::exit(0);
-            }
+            };
 
-            scheme.handle(&mut packet);
+            let response = request.handle_scheme(&zero_scheme);
 
-            socket.write(&packet).expect("zerod: failed to write responses to zero scheme");
+            socket.write_responses(&[response], SignalBehavior::Restart).expect("zerod: failed to write responses to zero scheme");
         }
     }).expect("zerod: failed to daemonize");
 }
