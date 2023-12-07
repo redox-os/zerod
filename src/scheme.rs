@@ -1,9 +1,9 @@
 use syscall::{error::*, MODE_CHR};
-use syscall::scheme::Scheme;
+use redox_scheme::Scheme;
 
-use std::cmp;
+use crate::Ty;
 
-pub struct ZeroScheme;
+pub struct ZeroScheme(pub Ty);
 
 impl Scheme for ZeroScheme {
     fn open(&self, _path: &str, _flags: usize, _uid: u32, _gid: u32) -> Result<usize> {
@@ -11,27 +11,23 @@ impl Scheme for ZeroScheme {
     }
 
     fn dup(&self, _file: usize, buf: &[u8]) -> Result<usize> {
-        if ! buf.is_empty() {
+        if !buf.is_empty() {
             return Err(Error::new(EINVAL));
         }
 
         Ok(0)
     }
 
-    /// Read the file `number` into the `buffer`
-    ///
-    /// Returns the number of bytes read
     fn read(&self, _file: usize, buf: &mut [u8]) -> Result<usize> {
-        let size = buf.len();
-
-        buf[..size].iter_mut().for_each(|val| *val = 0);
-
-        Ok(size)
+        match self.0 {
+            Ty::Null => Ok(0),
+            Ty::Zero => {
+                buf.fill(0);
+                Ok(buf.len())
+            }
+        }
     }
 
-    /// Write the `buffer` to the `file`
-    ///
-    /// Returns the number of bytes written
     fn write(&self, _file: usize, buffer: &[u8]) -> Result<usize> {
         Ok(buffer.len())
     }
@@ -42,7 +38,7 @@ impl Scheme for ZeroScheme {
 
     fn fpath(&self, _id: usize, buf: &mut [u8]) -> Result<usize> {
         let scheme_path = b"zero:";
-        let size = cmp::min(buf.len(), scheme_path.len());
+        let size = std::cmp::min(buf.len(), scheme_path.len());
 
         buf[..size].copy_from_slice(&scheme_path[..size]);
 
