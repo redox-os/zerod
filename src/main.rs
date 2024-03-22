@@ -1,4 +1,4 @@
-use redox_scheme::{Socket, SignalBehavior};
+use redox_scheme::{RequestKind, SignalBehavior, Socket};
 
 use scheme::ZeroScheme;
 
@@ -32,10 +32,15 @@ fn main() {
             let Some(request) = socket.next_request(SignalBehavior::Restart).expect("zerod: failed to read events from zero scheme") else {
                 std::process::exit(0);
             };
+            match request.kind() {
+                RequestKind::Call(request) => {
+                    let response = request.handle_scheme(&zero_scheme);
 
-            let response = request.handle_scheme(&zero_scheme);
+                    socket.write_responses(&[response], SignalBehavior::Restart).expect("zerod: failed to write responses to zero scheme");
+                }
+                _ => (),
+            }
 
-            socket.write_responses(&[response], SignalBehavior::Restart).expect("zerod: failed to write responses to zero scheme");
         }
     }).expect("zerod: failed to daemonize");
 }
