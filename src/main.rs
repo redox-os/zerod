@@ -1,4 +1,4 @@
-use redox_scheme::{RequestKind, SignalBehavior, Socket};
+use redox_scheme::{RequestKind, SignalBehavior, Socket, V2};
 
 use scheme::ZeroScheme;
 
@@ -21,26 +21,31 @@ fn main() {
             Ty::Null => "null",
             Ty::Zero => "zero",
         };
-        let socket = Socket::create(name).expect("zerod: failed to create zero scheme");
-        let zero_scheme = ZeroScheme(ty);
+        let socket = Socket::<V2>::create(name).expect("zerod: failed to create zero scheme");
+        let mut zero_scheme = ZeroScheme(ty);
 
         libredox::call::setrens(0, 0).expect("zerod: failed to enter null namespace");
 
         daemon.ready().expect("zerod: failed to notify parent");
 
         loop {
-            let Some(request) = socket.next_request(SignalBehavior::Restart).expect("zerod: failed to read events from zero scheme") else {
+            let Some(request) = socket
+                .next_request(SignalBehavior::Restart)
+                .expect("zerod: failed to read events from zero scheme")
+            else {
                 std::process::exit(0);
             };
             match request.kind() {
                 RequestKind::Call(request) => {
-                    let response = request.handle_scheme(&zero_scheme);
+                    let response = request.handle_scheme_mut(&mut zero_scheme);
 
-                    socket.write_responses(&[response], SignalBehavior::Restart).expect("zerod: failed to write responses to zero scheme");
+                    socket
+                        .write_responses(&[response], SignalBehavior::Restart)
+                        .expect("zerod: failed to write responses to zero scheme");
                 }
                 _ => (),
             }
-
         }
-    }).expect("zerod: failed to daemonize");
+    })
+    .expect("zerod: failed to daemonize");
 }
